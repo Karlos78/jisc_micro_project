@@ -4,7 +4,7 @@ Karl Molden, Veronika Hulikova
 
 ## Synopsis
 
-The aims of this project are to show that the results of work done by [Sheffield Hallam University](https://www.heacademy.ac.uk/sites/default/files/resources/2.3%20Using%20UKES%20results%20and%20institutional%20award%20marks%20to%20explore%20the%20relationship%20between%20student%20engagement%20and%20academic%20achievement.pdf)  showing a small but statistically significant relationship between responses to the HEA's UK Engagement Survey (UKES) and academic outcomes could be:
+The aims of this project are to show that the results of work done by [Sheffield Hallam University](https://www.heacademy.ac.uk/sites/default/files/resources/2.3%20Using%20UKES%20results%20and%20institutional%20award%20marks%20to%20explore%20the%20relationship%20between%20student%20engagement%20and%20academic%20achievement.pdf)  which identifya small but statistically significant relationship between responses to the HEA's UK Engagement Survey (UKES) and academic outcomes can be:
 
 * Recreated with similar data from the University of Greenwich
 * Extended from an annual survey to course level surveys conducted each term, and so potentially be useful as part of a learning analytics dataset
