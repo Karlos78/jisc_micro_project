@@ -1,13 +1,6 @@
----
-title: "Can survey data be used as an indicator of learning outcomes?"
-subtitle: "A JISC funded learning analytics micro-project"
-author: "Karl Molden, Veronika Hulikova"
-date: "25 January 2016"
-output: 
-  html_document:
-    keep_md: true
-    toc: true
----
+# Can survey data be used as an indicator of learning outcomes?
+Karl Molden, Veronika Hulikova  
+25 January 2016  
 
 ## Synopsis
 
@@ -35,7 +28,8 @@ Whilst this is tailored to the Greenwich data sets, it should be straightforward
 
 Firstly, we need to ensure R has the correct packages installed.
 
-```{r data_processing_packages, warning=FALSE, results='hide', message=FALSE}
+
+```r
 library(dplyr)
 library(car)
 library(ggplot2)
@@ -43,8 +37,8 @@ library(ggplot2)
 
 Next, the USS survey data needs to be matched to the student dataset which contains academic outcome - GPA.
 
-```{r data_processing_annual_survey_data} 
 
+```r
 setwd("C:\\Users\\mk77\\jisc_micro_project")
 
 
@@ -82,8 +76,8 @@ Quite a bit/Often    | 4
 Sometimes/Some       | 2
 Very little/Never    | 1
 
-```{r data_processing_UKES_data}
 
+```r
 ### Select only the columns and rows needed to analyse the UKES data
 merged_2014 %>% select(Banner.ID.Numhuns, Q1, Q2a, Q2b, Q2c, Q2d, Q2e, Q3a, Q4a, Q5a, Q6a, Q6b, Q6c, Q6d, Q7a, Q7b, Q7c, Q7d, Q7e, Stage.GPA, progression, ETHNICITY, M.F) %>% filter(Q1 == "On-campus UG first year") -> UKES_2014
 
@@ -113,25 +107,7 @@ UKES_2014$Q7e.num <- recode(UKES_2014$Q7e, "'Very often' = 5;'Often' = 4;'Someti
 
 In a similar fashion, course evaluation survey data can be joined to course grade information.
 
-```{r data_processing_course_data, echo = FALSE}
 
-setwd("C:\\Users\\mk77\\jisc_micro_project")
-
-### Read in the 2014 course eval data
-course_grades_2014 <- read.csv("2014_average_course_grades.csv")
-
-### Read in the 2014 GPA data
-course_2014 <- read.csv("2014_average_course_survey_data.csv")
-
-### Join the data together
-course_level_2014 <- merge(course_grades_2014,course_2014, by.x = "course_code", by.y = "course_code")
-
-### Rename the data fields
-names1 <- c("course_code", "m_grade", "n_grade", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14")
-names(course_level_2014) <- names1
-
-
-```
 
 ## Results
 ### UKES Analysis
@@ -144,86 +120,90 @@ Analysis of variance shows that seven of the UKES questions have a statistically
 - Q6b: Explained course material to one or more student.
 
 
-``` {r results_UKES_ANOVA}
+
+```r
 anova(lm(Stage.GPA~Q2a.num+Q2b.num+Q2c.num+Q2d.num+Q2e.num+Q3a.num+Q4a.num+Q5a.num+Q6a.num+Q6b.num+Q6c.num+Q6d.num+Q7a.num+Q7b.num+Q7c.num+Q7d.num+Q7e.num,data=UKES_2014))
 ```
 
-```{r results_UKES_cor, results='hide', echo=FALSE}
-cor.test(UKES_2014$Q2a.num,UKES_2014$Stage.GPA,method="pearson")
-cor.test(UKES_2014$Q4a.num,UKES_2014$Stage.GPA,method="pearson")
-cor.test(UKES_2014$Q5a.num,UKES_2014$Stage.GPA,method="pearson")
-cor.test(UKES_2014$Q6a.num,UKES_2014$Stage.GPA,method="pearson")
-cor.test(UKES_2014$Q6b.num,UKES_2014$Stage.GPA,method="pearson")
-cor.test(UKES_2014$Q7b.num,UKES_2014$Stage.GPA,method="pearson")
-cor.test(UKES_2014$Q7c.num,UKES_2014$Stage.GPA,method="pearson")
+```
+## Analysis of Variance Table
+## 
+## Response: Stage.GPA
+##             Df Sum Sq Mean Sq F value    Pr(>F)    
+## Q2a.num      1   2254  2253.7  5.8921 0.0153583 *  
+## Q2b.num      1     38    37.6  0.0983 0.7539910    
+## Q2c.num      1    209   208.5  0.5451 0.4604632    
+## Q2d.num      1    944   943.5  2.4668 0.1165463    
+## Q2e.num      1    402   402.1  1.0513 0.3054117    
+## Q3a.num      1      0     0.3  0.0008 0.9771699    
+## Q4a.num      1   1712  1711.7  4.4751 0.0346023 *  
+## Q5a.num      1   5138  5138.5 13.4342 0.0002581 ***
+## Q6a.num      1   3737  3737.1  9.7703 0.0018170 ** 
+## Q6b.num      1   2312  2311.9  6.0443 0.0140947 *  
+## Q6c.num      1      1     1.2  0.0031 0.9553596    
+## Q6d.num      1    286   286.5  0.7490 0.3869765    
+## Q7a.num      1     85    84.8  0.2218 0.6377635    
+## Q7b.num      1   4866  4865.9 12.7215 0.0003760 ***
+## Q7c.num      1   4541  4541.1 11.8724 0.0005898 ***
+## Q7d.num      1    439   439.1  1.1480 0.2841839    
+## Q7e.num      1    166   165.8  0.4336 0.5103682    
+## Residuals 1176 449811   382.5                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
-```{r results_UKES_cor_estimates, echo=FALSE}
-q2a_cor <- round(cor.test(UKES_2014$Q2a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-q4a_cor <- round(cor.test(UKES_2014$Q4a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-q5a_cor <- round(cor.test(UKES_2014$Q5a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-q6a_cor <- round(cor.test(UKES_2014$Q6a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-q6b_cor <- round(cor.test(UKES_2014$Q6b.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-q7b_cor <- round(cor.test(UKES_2014$Q7b.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-q7c_cor <- round(cor.test(UKES_2014$Q7c.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
-```
+
+
+
 
 The table below shows the strength of the correlations found.
 
 Question  | Correlation coefficient
 ----------|------------------------
-Q4a       | `r q4a_cor`
-Q5a       | `r q5a_cor`
-Q6a       | `r q6a_cor`
-Q6b       | `r q6b_cor`
+Q4a       | 0.059
+Q5a       | 0.091
+Q6a       | 0.081
+Q6b       | 0.117
 
 Box-plots of response against GPA for these four questions show that the main change in GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.
 
-```{r results_UKES_plots, echo=FALSE, out.width = '\\maxwidth'}
-
-
-# Set up a 2 x 2 plot
-par(mfrow=c(2,2), oma = c(0,0,2,0))
-
-# Boxplots of question responses against GPA for each question
-boxplot(Stage.GPA ~ Q4a.num, data = UKES_2014,
-  ylab = "GPA",
-  main = "Q4a")
-
-boxplot(Stage.GPA ~ Q5a.num, data = UKES_2014,
-  main = "Q5a")
-
-boxplot(Stage.GPA ~ Q6a.num, data = UKES_2014,
-  xlab = "Response", ylab = "GPA",
-  main = "Q6a")
-
-boxplot(Stage.GPA ~ Q6b.num, data = UKES_2014,
-  xlab = "Response",
-  main = "Q6b")
-
-mtext("Boxplots of Question Responses against GPA", outer = TRUE, cex = 1.5)
-
-
-
-``` 
+<img src="micro_project_report_files/figure-html/results_UKES_plots-1.png" title="" alt="" width="\maxwidth" />
 
 ### Course Evaluations Analysis
 
 Course evaluation surveys at Greenwich contain a standard set of 14 questions posed to every on-campus student on every course.
 
-```{r results_courses_anova}
+
+```r
 ###running a grouped anova for the questions and modified grades
 anova(lm(m_grade~Q1+Q2+Q3+Q4+Q5+Q6+Q7+Q8+Q9+Q10+Q11+Q12+Q13+Q14,data=course_level_2014))
 ```
 
-```{r results_courses_cor, echo=FALSE, results='hide'}
-### Runing a correlation test
-cor.test(course_level_2014$Q4,course_level_2014$m_grade,method="pearson")
-cor.test(course_level_2014$Q8,course_level_2014$m_grade,method="pearson")
-
-q4_cor <- round(cor.test(course_level_2014$Q4,course_level_2014$m_grade,method="pearson")$estimate,3)
-q8_cor <- round(cor.test(course_level_2014$Q8,course_level_2014$m_grade,method="pearson")$estimate,3)
 ```
+## Analysis of Variance Table
+## 
+## Response: m_grade
+##             Df Sum Sq Mean Sq F value  Pr(>F)  
+## Q1         360  33477   92.99  0.7034 0.99997  
+## Q2           1      5    5.32  0.0402 0.84110  
+## Q3           1     89   89.01  0.6733 0.41206  
+## Q4           1    863  863.06  6.5288 0.01074 *
+## Q5           1    464  464.10  3.5107 0.06122 .
+## Q6           1    264  263.88  1.9962 0.15796  
+## Q7           1    383  383.14  2.8983 0.08894 .
+## Q8           1    603  603.13  4.5625 0.03289 *
+## Q9           1     53   52.86  0.3998 0.52729  
+## Q10          1    232  231.86  1.7540 0.18564  
+## Q11          1      4    3.52  0.0267 0.87032  
+## Q12          1    165  165.26  1.2502 0.26375  
+## Q13          1     86   86.15  0.6517 0.41968  
+## Q14          1    173  172.99  1.3086 0.25288  
+## Residuals 1168 154403  132.19                  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+
 
 Analysis of variance shows that two of these fourteen questions have a statistically significant (p < 0.5) correlation with academic outcome as measured by the grade achieved on that course, those questions being:
 
