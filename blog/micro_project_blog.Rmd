@@ -29,23 +29,26 @@ The headline results of this analysis are that:
 * There are small but statistically significant correlations between UKES responses and academic outcomes
 * We can find similar relationships between course evaluation data and academic outcome
 
+A note about the UKES survey: *This material and its contents [UKES] is developed by The Higher Education Academy ("HEA"). Some of the questions in this survey are used with permission from The College Student Report, National Survey of Student Engagement, Copyright 2001-2016 The Trustees of Indiana University. With the exception of the aforementioned, the copyright in such material and content belongs to the HEA. No reproduction, modification, or adaptation is permitted without the prior written consent of the HEA © The Higher Education Academy 2012, Amended 2015, All Rights Reserved.*
+
+
 ## Data Processing
 
-Whilst this is tailored to the Greenwich data sets, it should be straightforward to adapt to other, similar data.  For both the annual USS survey data the processing is essentially the same:
+Whilst this is tailored to the Greenwich data sets, it should be straightforward to adapt to other, similar data.  For both the annual USS survey and the course evaluation data the processing is essentially the same:
 
 * Match survey data with academic outcome data
 * Filter data to the set needed to work with
-* Perform any re-coding necessary to make the data comprehensible
+* Perform any re-coding necessary to make the data ready for statistical analysis
 
-Firstly, we need to ensure R has the correct packages installed.
+Currently all of the data processing has been performed using 'R' and the code used for the whole analysis can be found here:
+
+https://github.com/Karlos78/jisc_micro_project
 
 ```{r data_processing_packages, warning=FALSE, results='hide', message=FALSE}
 library(dplyr)
 library(car)
 library(ggplot2)
 ```
-
-Next, the USS survey data needs to be matched to the student dataset which contains academic outcome - GPA.
 
 ```{r data_processing_annual_survey_data} 
 
@@ -77,7 +80,7 @@ stu_gpa_2014$progression <- as.factor(stu_gpa_2014$progression)
 merged_2014 <- merge(sd_2014,stu_gpa_2014, by.x = "Banner.ID.Numhuns", by.y = "BANNER_ID_NUMHUS", all.x=TRUE)
 ```
 
-The data is filtered so that it only includes the students which we are interested in, which in the case of the UKES are On-campus, undergraduate first years along with the UKES questions.  Finally, the question responses are re-coded as shown in the table below:
+The matched survey data is filtered so that it only includes the students which we are interested in, which in the case of the UKES are On-campus, undergraduate first years and the data is restricted to only the UKES questions. The question responses are re-coded as shown in the table below:
 
 Response             | Re-coded Value
 ---------------------|-------------
@@ -115,7 +118,6 @@ UKES_2014$Q7d.num <- recode(UKES_2014$Q7d, "'Very often' = 5;'Often' = 4;'Someti
 UKES_2014$Q7e.num <- recode(UKES_2014$Q7e, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
 ```
 
-In a similar fashion, course evaluation survey data can be joined to course grade information.
 
 ```{r data_processing_course_data, echo = FALSE}
 
@@ -181,29 +183,44 @@ Q5a       | `r q5a_cor`
 Q6a       | `r q6a_cor`
 Q6b       | `r q6b_cor`
 
-Box-plots of response against GPA for these four questions show that the main change in GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.
+Box-plots of GPA against response for these questions show that the main change in the distribution of GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.  The box-plots below show quite clearly how the lower end of the distributions become more tightly distributed around the median as the response changes from engaging less with a particular behaviour to engaging more.
 
 ```{r results_UKES_plots, echo=FALSE, out.width = '\\maxwidth'}
 
 
 # Boxplots of question responses against GPA for each question
-boxplot(Stage.GPA ~ Q4a.num, data = UKES_2014,
-  ylab = "GPA",
-  main = "Q4a")
+
+par(mfrow = c(1,2), oma = c(0,0,2,0))
 
 boxplot(Stage.GPA ~ Q5a.num, data = UKES_2014,
+  xlab = "Response", ylab = "GPA",
   main = "Q5a")
 
-boxplot(Stage.GPA ~ Q6a.num, data = UKES_2014,
-  xlab = "Response", ylab = "GPA",
-  main = "Q6a")
-
 boxplot(Stage.GPA ~ Q6b.num, data = UKES_2014,
-  xlab = "Response",
+  xlab = "Response", ylab = "GPA",
   main = "Q6b")
 
-mtext("Boxplots of Question Responses against GPA", outer = TRUE, cex = 1.5)
+mtext("Boxplots of GPA vs. Question Responses", outer = TRUE, cex = 1.5)
 ``` 
+
+The histograms below look more closely at the GPAs of respondents who answered 'Never' to question 6b compared to the other three responses. As can be seen, the GPA distribution for those who answered 'Never' has a lower mean as well as having a larger spread across the lower GPA values.
+
+```{r results_dist, out.width='\\maxwidth'}
+
+# Histograms of the distribution of GPA for response, "never" and all other responses for q6b.
+# First, subset the data into the two groups
+
+par(mfrow = c(1,2), oma = c(0,0,2,0))
+
+UKES_2014 %>% filter(Q6b.num == 1) -> q6b.never
+UKES_2014 %>% filter(Q6b.num > 1) -> q6b.other
+ 
+hist(q6b.never$Stage.GPA, main = "Never", freq = FALSE, ylim = c(0,0.04), xlab = "GPA", col=rgb(0.8,0.8,0.8,0.5))
+hist(q6b.other$Stage.GPA, main = "Sometimes/Often/Very Often", freq = FALSE, ylim = c(0,0.04), xlab = "GPA", col=rgb(0.1,0.1,0.1,0.5))
+
+mtext("GPA Distributions for Question 6b", outer = TRUE, cex = 1.5)
+
+```
 
 ### Course Evaluations Analysis
 

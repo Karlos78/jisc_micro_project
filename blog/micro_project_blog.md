@@ -20,23 +20,26 @@ The headline results of this analysis are that:
 * There are small but statistically significant correlations between UKES responses and academic outcomes
 * We can find similar relationships between course evaluation data and academic outcome
 
+A note about the UKES survey: *This material and its contents [UKES] is developed by The Higher Education Academy ("HEA"). Some of the questions in this survey are used with permission from The College Student Report, National Survey of Student Engagement, Copyright 2001-2016 The Trustees of Indiana University. With the exception of the aforementioned, the copyright in such material and content belongs to the HEA. No reproduction, modification, or adaptation is permitted without the prior written consent of the HEA © The Higher Education Academy 2012, Amended 2015, All Rights Reserved.*
+
+
 ## Data Processing
 
-Whilst this is tailored to the Greenwich data sets, it should be straightforward to adapt to other, similar data.  For both the annual USS survey data the processing is essentially the same:
+Whilst this is tailored to the Greenwich data sets, it should be straightforward to adapt to other, similar data.  For both the annual USS survey and the course evaluation data the processing is essentially the same:
 
 * Match survey data with academic outcome data
 * Filter data to the set needed to work with
-* Perform any re-coding necessary to make the data comprehensible
+* Perform any re-coding necessary to make the data ready for statistical analysis
 
-Firstly, we need to ensure R has the correct packages installed.
+Currently all of the data processing has been performed using 'R' and the code used for the whole analysis can be found here:
 
-
-
-Next, the USS survey data needs to be matched to the student dataset which contains academic outcome - GPA.
+https://github.com/Karlos78/jisc_micro_project
 
 
 
-The data is filtered so that it only includes the students which we are interested in, which in the case of the UKES are On-campus, undergraduate first years along with the UKES questions.  Finally, the question responses are re-coded as shown in the table below:
+
+
+The matched survey data is filtered so that it only includes the students which we are interested in, which in the case of the UKES are On-campus, undergraduate first years and the data is restricted to only the UKES questions. The question responses are re-coded as shown in the table below:
 
 Response             | Re-coded Value
 ---------------------|-------------
@@ -47,7 +50,6 @@ Very little/Never    | 1
 
 
 
-In a similar fashion, course evaluation survey data can be joined to course grade information.
 
 
 
@@ -103,9 +105,13 @@ Q5a       | 0.091
 Q6a       | 0.081
 Q6b       | 0.117
 
-Box-plots of response against GPA for these four questions show that the main change in GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.
+Box-plots of GPA against response for these questions show that the main change in the distribution of GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.  The box-plots below show quite clearly how the lower end of the distributions become more tightly distributed around the median as the response changes from engaging less with a particular behaviour to engaging more.
 
-<img src="micro_project_blog_files/figure-html/results_UKES_plots-1.png" title="" alt="" width="\maxwidth" /><img src="micro_project_blog_files/figure-html/results_UKES_plots-2.png" title="" alt="" width="\maxwidth" /><img src="micro_project_blog_files/figure-html/results_UKES_plots-3.png" title="" alt="" width="\maxwidth" /><img src="micro_project_blog_files/figure-html/results_UKES_plots-4.png" title="" alt="" width="\maxwidth" />
+<img src="micro_project_blog_files/figure-html/results_UKES_plots-1.png" title="" alt="" width="\maxwidth" />
+
+The histograms below look more closely at the GPAs of respondents who answered 'Never' to question 6b compared to the other three responses. As can be seen, the GPA distribution for those who answered 'Never' has a lower mean as well as having a larger spread across the lower GPA values.
+
+<img src="micro_project_blog_files/figure-html/results_dist-1.png" title="" alt="" width="\maxwidth" />
 
 ### Course Evaluations Analysis
 
