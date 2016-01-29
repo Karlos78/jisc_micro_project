@@ -180,8 +180,6 @@ Q6b       | `r q6b_cor`
 Box-plots of response against GPA for these four questions show that the main change in GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.
 
 ```{r results_UKES_plots, echo=FALSE, out.width = '\\maxwidth'}
-
-
 # Set up a 2 x 2 plot
 par(mfrow=c(2,2), oma = c(0,0,2,0))
 
@@ -202,9 +200,6 @@ boxplot(Stage.GPA ~ Q6b.num, data = UKES_2014,
   main = "Q6b")
 
 mtext("Boxplots of Question Responses against GPA", outer = TRUE, cex = 1.5)
-
-
-
 ``` 
 
 ### Course Evaluations Analysis

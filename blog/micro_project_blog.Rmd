@@ -1,0 +1,242 @@
+---
+title: "Can survey data be used as an indicator of learning outcomes?"
+subtitle: "A JISC funded learning analytics micro-project"
+author: "Karl Molden, Veronika Hulikova"
+date: "25 January 2016"
+output: 
+  html_document:
+    keep_md: true
+    toc: true
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Synopsis
+
+The aims of this project are to show that the results of work done by [Sheffield Hallam University](https://www.heacademy.ac.uk/sites/default/files/resources/2.3%20Using%20UKES%20results%20and%20institutional%20award%20marks%20to%20explore%20the%20relationship%20between%20student%20engagement%20and%20academic%20achievement.pdf)  which identify a small but statistically significant relationship between responses to the HEA's UK Engagement Survey (UKES) and academic outcomes can be:
+
+* Recreated with similar data from the University of Greenwich
+* Extended from an annual survey to course level surveys conducted each term, and so potentially be useful as part of a learning analytics dataset
+
+As such a dataset containing responses to the University Student Survey (USS), which from the 2014 session contains the UKES questions as a subset of the whole survey, was matched to a student dataset containing the Grade Point Average (GPA) and a second dataset containing responses to course evaluation surveys was matched to a dataset containing course grades.
+
+Regression analysis was performed on the matched data to identify if correlations exist between responses to questions and GPA/course grades.
+
+The headline results of this analysis are that:
+
+* There are small but statistically significant correlations between UKES responses and academic outcomes
+* We can find similar relationships between course evaluation data and academic outcome
+
+## Data Processing
+
+Whilst this is tailored to the Greenwich data sets, it should be straightforward to adapt to other, similar data.  For both the annual USS survey data the processing is essentially the same:
+
+* Match survey data with academic outcome data
+* Filter data to the set needed to work with
+* Perform any re-coding necessary to make the data comprehensible
+
+Firstly, we need to ensure R has the correct packages installed.
+
+```{r data_processing_packages, warning=FALSE, results='hide', message=FALSE}
+library(dplyr)
+library(car)
+library(ggplot2)
+```
+
+Next, the USS survey data needs to be matched to the student dataset which contains academic outcome - GPA.
+
+```{r data_processing_annual_survey_data} 
+
+setwd("C:\\Users\\mk77\\jisc_micro_project")
+
+
+### Read in the 2014 University Student Survey data
+all_rows <- readLines("USS 2014 Main.csv")
+sd_2014_desc <- all_rows[2]
+skip_second <- all_rows[-2]
+
+sd_2014 <- read.csv(textConnection(skip_second), header = TRUE, stringsAsFactors = FALSE)
+
+### Read in the 2014 student data
+stu_d_2014 <- read.csv("2014_stu_data.csv")
+
+### Select the rows within the student data which we're interested in.
+stu_gpa_2014 <- stu_d_2014 %>% select(BANNER_ID_NUMHUS, Stage.GPA, Most.recent.progress, Enroll.status, ETHNICITY, M.F)
+
+
+### Recode progression status - currently not used in analysis
+stu_gpa_2014$progression <- recode(stu_gpa_2014$Most.recent.progress, "'C':'CE':'CG'='Complete';'F':'FR'='Fail';'RP'='Reassessment Pending';'P0':'P1':'P2':'P3':'P4':'PI':'SN'='Continuing';else='Unknown'")
+stu_gpa_2014$progression <- as.character(stu_gpa_2014$progression)
+stu_gpa_2014[stu_gpa_2014$Enroll.status == c("W","I"),]$progression <- "Withdrawn/Interrupted"
+stu_gpa_2014$progression <- as.factor(stu_gpa_2014$progression)
+
+
+### Join the survey data to the student data by student id
+merged_2014 <- merge(sd_2014,stu_gpa_2014, by.x = "Banner.ID.Numhuns", by.y = "BANNER_ID_NUMHUS", all.x=TRUE)
+```
+
+The data is filtered so that it only includes the students which we are interested in, which in the case of the UKES are On-campus, undergraduate first years along with the UKES questions.  Finally, the question responses are re-coded as shown in the table below:
+
+Response             | Re-coded Value
+---------------------|-------------
+Very much/Very often | 5
+Quite a bit/Often    | 4
+Sometimes/Some       | 2
+Very little/Never    | 1
+
+```{r data_processing_UKES_data}
+
+### Select only the columns and rows needed to analyse the UKES data
+merged_2014 %>% select(Banner.ID.Numhuns, Q1, Q2a, Q2b, Q2c, Q2d, Q2e, Q3a, Q4a, Q5a, Q6a, Q6b, Q6c, Q6d, Q7a, Q7b, Q7c, Q7d, Q7e, Stage.GPA, progression, ETHNICITY, M.F) %>% filter(Q1 == "On-campus UG first year") -> UKES_2014
+
+
+### Recode the responses to selected questions to numeric values
+UKES_2014$Q2a.num <- recode(UKES_2014$Q2a, "'Very much' = 5;'Quite a bit' = 4;'Some' = 2;'Very little' = 1; else=NA")
+UKES_2014$Q2b.num <- recode(UKES_2014$Q2b, "'Very much' = 5;'Quite a bit' = 4;'Some' = 2;'Very little' = 1; else=NA")
+UKES_2014$Q2c.num <- recode(UKES_2014$Q2c, "'Very much' = 5;'Quite a bit' = 4;'Some' = 2;'Very little' = 1; else=NA")
+UKES_2014$Q2d.num <- recode(UKES_2014$Q2d, "'Very much' = 5;'Quite a bit' = 4;'Some' = 2;'Very little' = 1; else=NA")
+UKES_2014$Q2e.num <- recode(UKES_2014$Q2e, "'Very much' = 5;'Quite a bit' = 4;'Some' = 2;'Very little' = 1; else=NA")
+
+UKES_2014$Q3a.num <- recode(UKES_2014$Q3a, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q4a.num <- recode(UKES_2014$Q4a, "'Very much' = 5;'Quite a bit' = 4;'Some' = 2;'Very little' = 1; else=NA")
+UKES_2014$Q5a.num <- recode(UKES_2014$Q5a, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+
+UKES_2014$Q6a.num <- recode(UKES_2014$Q6a, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q6b.num <- recode(UKES_2014$Q6b, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q6c.num <- recode(UKES_2014$Q6c, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q6d.num <- recode(UKES_2014$Q6d, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+
+UKES_2014$Q7a.num <- recode(UKES_2014$Q7a, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q7b.num <- recode(UKES_2014$Q7b, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q7c.num <- recode(UKES_2014$Q7c, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q7d.num <- recode(UKES_2014$Q7d, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+UKES_2014$Q7e.num <- recode(UKES_2014$Q7e, "'Very often' = 5;'Often' = 4;'Sometimes' = 2;'Never' = 1; else=NA")
+```
+
+In a similar fashion, course evaluation survey data can be joined to course grade information.
+
+```{r data_processing_course_data, echo = FALSE}
+
+setwd("C:\\Users\\mk77\\jisc_micro_project")
+
+### Read in the 2014 course eval data
+course_grades_2014 <- read.csv("2014_average_course_grades.csv")
+
+### Read in the 2014 GPA data
+course_2014 <- read.csv("2014_average_course_survey_data.csv")
+
+### Join the data together
+course_level_2014 <- merge(course_grades_2014,course_2014, by.x = "course_code", by.y = "course_code")
+
+### Rename the data fields
+names1 <- c("course_code", "m_grade", "n_grade", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14")
+names(course_level_2014) <- names1
+
+
+```
+
+## Results
+### UKES Analysis
+
+Analysis of variance shows that seven of the UKES questions have a statistically significant (p < 0.05) correlation with GPA. Of these, four are the same as those found in the analysis performed by Sheffield Hallam.
+
+- Q4a: During the current academic year, to what extent has your course challenged you to do your best work?
+- Q5a: During the current academic year, about how often have you come to taught sessions prepared (completed assignments, readings, reports, etc.)?
+- Q6a: Worked with other students on course projects or assignments.
+- Q6b: Explained course material to one or more student.
+
+
+``` {r results_UKES_ANOVA}
+anova(lm(Stage.GPA~Q2a.num+Q2b.num+Q2c.num+Q2d.num+Q2e.num+Q3a.num+Q4a.num+Q5a.num+Q6a.num+Q6b.num+Q6c.num+Q6d.num+Q7a.num+Q7b.num+Q7c.num+Q7d.num+Q7e.num,data=UKES_2014))
+```
+
+```{r results_UKES_cor, results='hide', echo=FALSE}
+cor.test(UKES_2014$Q2a.num,UKES_2014$Stage.GPA,method="pearson")
+cor.test(UKES_2014$Q4a.num,UKES_2014$Stage.GPA,method="pearson")
+cor.test(UKES_2014$Q5a.num,UKES_2014$Stage.GPA,method="pearson")
+cor.test(UKES_2014$Q6a.num,UKES_2014$Stage.GPA,method="pearson")
+cor.test(UKES_2014$Q6b.num,UKES_2014$Stage.GPA,method="pearson")
+cor.test(UKES_2014$Q7b.num,UKES_2014$Stage.GPA,method="pearson")
+cor.test(UKES_2014$Q7c.num,UKES_2014$Stage.GPA,method="pearson")
+```
+
+```{r results_UKES_cor_estimates, echo=FALSE}
+q2a_cor <- round(cor.test(UKES_2014$Q2a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+q4a_cor <- round(cor.test(UKES_2014$Q4a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+q5a_cor <- round(cor.test(UKES_2014$Q5a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+q6a_cor <- round(cor.test(UKES_2014$Q6a.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+q6b_cor <- round(cor.test(UKES_2014$Q6b.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+q7b_cor <- round(cor.test(UKES_2014$Q7b.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+q7c_cor <- round(cor.test(UKES_2014$Q7c.num,UKES_2014$Stage.GPA,method="pearson")$estimate,3)
+```
+
+The table below shows the strength of the correlations found.
+
+Question  | Correlation coefficient
+----------|------------------------
+Q4a       | `r q4a_cor`
+Q5a       | `r q5a_cor`
+Q6a       | `r q6a_cor`
+Q6b       | `r q6b_cor`
+
+Box-plots of response against GPA for these four questions show that the main change in GPA is between respondents who answer '1:Never/Very little' and those who give one of the other responses, '2:Sometimes/4:Often/5:Very often'.
+
+```{r results_UKES_plots, echo=FALSE, out.width = '\\maxwidth'}
+
+
+# Boxplots of question responses against GPA for each question
+boxplot(Stage.GPA ~ Q4a.num, data = UKES_2014,
+  ylab = "GPA",
+  main = "Q4a")
+
+boxplot(Stage.GPA ~ Q5a.num, data = UKES_2014,
+  main = "Q5a")
+
+boxplot(Stage.GPA ~ Q6a.num, data = UKES_2014,
+  xlab = "Response", ylab = "GPA",
+  main = "Q6a")
+
+boxplot(Stage.GPA ~ Q6b.num, data = UKES_2014,
+  xlab = "Response",
+  main = "Q6b")
+
+mtext("Boxplots of Question Responses against GPA", outer = TRUE, cex = 1.5)
+``` 
+
+### Course Evaluations Analysis
+
+Course evaluation surveys at Greenwich contain a standard set of 14 questions posed to every on-campus student on every course.
+
+```{r results_courses_anova}
+###running a grouped anova for the questions and modified grades
+anova(lm(m_grade~Q1+Q2+Q3+Q4+Q5+Q6+Q7+Q8+Q9+Q10+Q11+Q12+Q13+Q14,data=course_level_2014))
+```
+
+```{r results_courses_cor, echo=FALSE, results='hide'}
+### Runing a correlation test
+cor.test(course_level_2014$Q4,course_level_2014$m_grade,method="pearson")
+cor.test(course_level_2014$Q8,course_level_2014$m_grade,method="pearson")
+
+q4_cor <- round(cor.test(course_level_2014$Q4,course_level_2014$m_grade,method="pearson")$estimate,3)
+q8_cor <- round(cor.test(course_level_2014$Q8,course_level_2014$m_grade,method="pearson")$estimate,3)
+```
+
+Analysis of variance shows that two of these fourteen questions have a statistically significant (p < 0.5) correlation with academic outcome as measured by the grade achieved on that course, those questions being:
+
+- Q4: I have received good support to manage my assessment workload.
+- Q8: The learning environment for this course has been good.
+
+
+## Conclusion & Recommendations
+
+This project has shown that responses to some questions within student surveys are correlated with academic outcome. We have identified a relationship between questions in the UKES and GPA, as well as going on to show a similar relationship between course evaluation survey questions and course grades.
+
+It should be possible to take this work further by identifying the academic behaviours which may be driving the survey responses, modifying the course structure so that this behaviour may be increased/decreased as required and then observing if this has an effect upon both survey response and academic outcome.
+
+For instance, two of the UKES questions identified as having a statistically significant correlation with GPA are specifically about engagement with a student's peer group. A simple experiment might be to identify a programme or course which scores poorly on these questions and increase the amount of group work to see if this can be improved, and consequently, academic outcomes as measured by GPA.
+
+Additionally, whilst further work needs to be done, the course evaluation survey results suggest that this relatively more "real-time" data might well be useful alongside other information in a learning-analytics application.
+
+
